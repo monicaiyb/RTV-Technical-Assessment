@@ -2,6 +2,16 @@
 ## Introduction
 This assessment evaluates your proficiency in designing and implementing end-to-end data engineering solutions using RTV household survey data. You will demonstrate expertise in data architecture, ETL/ELT processes, data warehousing, and analytical visualization.
 
+## **Technologies Used**
+- **Programming Language:** Python 3.12 and greater
+- **Database:** PostgreSQL
+
+- **Python Libraries:**
+  - `pandas`: For data manipulation and cleaning.
+  - `SQLAlchemy`: For database interaction.
+  - `numpy`: For numerical computations.
+  - `dotenv`: To handle environment variables (API keys, DB credentials).
+
 ## Getting Started
 
 1. Clone the repository:
@@ -43,22 +53,10 @@ This assessment evaluates your proficiency in designing and implementing end-to-
    python src/extract.py
    python src/transform.py
    python src/load.py
+
    ```
-
-## **Technologies Used**
-- **Programming Language:** Python 3.12 and greater
-- **Database:** PostgreSQL
-
-- **Python Libraries:**
-  - `pandas`: For data manipulation and cleaning.
-  - `SQLAlchemy`: For database interaction.
-  - `numpy`: For numerical computations.
-  - `dotenv`: To handle environment variables (API keys, DB credentials).
-
-  ## **How to Run the Project**
-
-
-
-
-
-## **ETL Pipeline Breakdown**
+### **3. Running Analysis**
+- Explore the data using the provided Jupyter notebook:
+  ```bash
+  jupyter notebook notebooks/analysis.ipynb
+  ``
