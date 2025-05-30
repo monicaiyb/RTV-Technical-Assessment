@@ -48,36 +48,10 @@ print(df_base_line.dtypes)
 # Append Solution to df_split_train
 combined_data = pd.merge(df_base_line, df_year_one,df_year_two, on='hhid2', how='inner')
 combined_data.info()
+combined_data.describe()
 
 #Show some visualisations for the data
 combined_data.hist(bins=50, figsize=(20,15))
 plt.show()
 
 
-connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-container_name = os.getenv("AZURE_CONTAINER_NAME")
-local_folder = "Data"
-
-# Set up connection to Azure storage
-connect_str = connection_string
-blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-container_client = blob_service_client.get_container_client(container_name)
-
-#Create container if it does not exist
-try:
-    container_client.create_container()
-except Exception:
-    pass
-
-# Upload file
-for root, _, files in os.walk(local_folder):
-    for file in files:
-        local_file_path = os.path.join(root, file)
-        blob_path = os.path.relpath(local_file_path, start=local_folder)  # Preserve folder structure
-        blob_client = container_client.get_blob_client(blob=blob_path)
-
-        with open(local_file_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
-            print(f"Uploaded: {blob_path}")
-
-print("File uploaded to Azure Blob Storage.")
