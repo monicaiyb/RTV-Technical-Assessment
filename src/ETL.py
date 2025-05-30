@@ -1,78 +1,79 @@
-import os
-import csv
-from pathlib import Path
-import io
+
+
+# Code for ETL operations on Country-GDP data
+from io import StringIO
+import requests
+from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
-
-from dotenv import load_dotenv
-from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient
-load_dotenv() 
-
-df_base_line  = pd.read_csv("Data/01_baseline.csv")
-print(df_base_line.head())
-
-# we can get metadata of csv
-print(f"Number of rows: {df_base_line.shape[0]}, Number of columns: {df_base_line.shape[1]}")
+import sqlite3
+from datetime import datetime
 
 
-df_year_one= pd.read_csv("Data/02_year_one.csv")
-print(df_year_one.head())
+def log_progress(message):
+    """This function logs the mentioned message of a given stage of the
+    code execution to a log file. Function returns nothing"""
 
-# we can get metadata of csv
-print(f"Number of rows: {df_year_one.shape[0]}, Number of columns: {df_year_one.shape[1]}")
-
-
-df_year_two = pd.read_csv("Data/03_year_two.csv")
-print(df_year_two.head())
-
-# we can get metadata of csv
-print(f"Number of rows: {df_year_two.shape[0]}, Number of columns: {df_year_two.shape[1]}")
+    with open('code_log.txt', 'a') as f:
+        f.write(f'{datetime.now()}: {message}\n')
 
 
+def extract(url, table_attribs):
+    """ This function aims to extract the required
+    information from the website and save it to a data frame. The
+    function returns the data frame for further processing. """
 
-# Summary statistics
-print(df_base_line.describe())
-print(df_year_one.describe())
-print(df_year_two.describe())
+    soup = BeautifulSoup(requests.get(url).text, 'html.parser')
+    table = soup.find('span', string=table_attribs).find_next('table')
+    df = pd.read_html(StringIO(str(table)))[0]
 
-# Check for missing values
-print(df_base_line.isnull().sum())
-print(df_year_one.isnull().sum())
-print(df_year_two.isnull().sum())
+    log_progress('Data extraction complete. Initiating Transformation process')
 
-# Data types
-print(df_base_line.dtypes)
-
+    return df
 
 
-connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
-container_name = os.getenv("AZURE_CONTAINER_NAME")
-local_folder = "Data"
+def transform(df, csv_path):
+    """ This function accesses the CSV file for exchange rate
+    information, and adds three columns to the data frame, each
+    containing the transformed version of Market Cap column to
+    respective currencies"""
 
-# Set up connection to Azure storage
-connect_str = connection_string
-blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-container_client = blob_service_client.get_container_client(container_name)
+   
 
-#Create container if it does not exist
-try:
-    container_client.create_container()
-except Exception:
-    pass
+    log_progress('Data transformation complete. Initiating Loading process')
 
-# Upload files
-for root, _, files in os.walk(local_folder):
-    for file in files:
-        local_file_path = os.path.join(root, file)
-        blob_path = os.path.relpath(local_file_path, start=local_folder)  # Preserve folder structure
-        blob_client = container_client.get_blob_client(blob=blob_path)
-
-        with open(local_file_path, "rb") as data:
-            blob_client.upload_blob(data, overwrite=True)
-            print(f"✅ Uploaded: {blob_path}")
+    return df
 
 
+def load_to_csv(df, output_path):
+    """ This function saves the final data frame as a CSV file in
+    the provided path. Function returns nothing."""
 
+    df.to_csv(output_path)
+
+    log_progress('Data saved to CSV file')
+
+
+def load_to_db(df, sql_connection, table_name):
+    """ This function saves the final data frame to a database
+    table with the provided name. Function returns nothing."""
+
+    df.to_sql(table_name, sql_connection, if_exists='replace', index=False)
+
+    log_progress('Data loaded to Database as a table, Executing queries')
+
+
+def run_query(query_statement, sql_connection):
+    """ This function runs the query on the database table and
+    prints the output on the terminal. Function returns nothing. """
+
+    cursor = sql_connection.cursor()
+    cursor.execute(query_statement)
+    result = cursor.fetchall()
+    # for row in result:
+    #     ic(row)
+
+    log_progress('Process Complete')
+
+    return result
 
 
